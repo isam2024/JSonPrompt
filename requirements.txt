@@ -1,0 +1,3 @@
+# Recent llama-cpp-python is required: JSON-schema -> grammar support for `pattern`,
+# `enum`, `minItems`/`maxItems`, and `additionalProperties:false` matured over 0.2.x → 0.3.x.
+llama-cpp-python>=0.3.2
