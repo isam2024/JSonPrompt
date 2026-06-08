@@ -37,8 +37,8 @@ except Exception:
 _MODEL_CACHE = {}
 
 
-def _get_model(model_path, n_ctx, n_threads):
-    key = (os.path.abspath(model_path), int(n_ctx), int(n_threads))
+def _get_model(model_path, n_ctx, n_threads, n_gpu_layers):
+    key = (os.path.abspath(model_path), int(n_ctx), int(n_threads), int(n_gpu_layers))
     cached = _MODEL_CACHE.get(key)
     if cached is not None:
         return cached
@@ -51,11 +51,14 @@ def _get_model(model_path, n_ctx, n_threads):
     if not os.path.isfile(model_path):
         raise FileNotFoundError(f"GGUF model not found: {model_path}")
     _MODEL_CACHE.clear()  # keep only one model resident
+    # n_gpu_layers=-1 offloads every layer to the GPU. Requires a CUDA-enabled build of
+    # llama-cpp-python; a CPU-only build silently ignores this and stays on CPU.
     llm = Llama(
         model_path=model_path,
         n_ctx=int(n_ctx),
         n_threads=int(n_threads) if int(n_threads) > 0 else None,
-        verbose=False,
+        n_gpu_layers=int(n_gpu_layers),
+        verbose=True,  # prints "offloaded X/Y layers to GPU" so you can confirm GPU use
     )
     _MODEL_CACHE[key] = llm
     return llm
@@ -286,6 +289,11 @@ class JSONPromptGenerator:
                 ),
                 "n_ctx": ("INT", {"default": 4096, "min": 512, "max": 32768}),
                 "n_threads": ("INT", {"default": 0, "min": 0, "max": 128}),
+                "n_gpu_layers": (
+                    "INT",
+                    {"default": -1, "min": -1, "max": 999,
+                     "tooltip": "-1 = offload all layers to GPU (needs CUDA build). 0 = CPU only."},
+                ),
             },
         }
 
@@ -311,6 +319,7 @@ class JSONPromptGenerator:
         model_path_override="",
         n_ctx=4096,
         n_threads=0,
+        n_gpu_layers=-1,
     ):
         # Resolve model path.
         if model_path_override.strip():
@@ -336,7 +345,7 @@ class JSONPromptGenerator:
         else:
             schema = SCHEMA_PRESETS[schema_preset]
 
-        llm = _get_model(model_path, n_ctx, n_threads)
+        llm = _get_model(model_path, n_ctx, n_threads, n_gpu_layers)
 
         result = llm.create_chat_completion(
             messages=[
