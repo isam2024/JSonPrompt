@@ -74,15 +74,15 @@ SCENE_COMPOSITION_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
     "properties": {
-        "high_level_description": {"type": "string"},
+        "high_level_description": {"type": "string", "maxLength": 300},
         "style_description": {
             "type": "object",
             "additionalProperties": False,
             "properties": {
-                "aesthetics": {"type": "string"},
-                "lighting": {"type": "string"},
-                "photo": {"type": "string"},
-                "medium": {"type": "string"},
+                "aesthetics": {"type": "string", "maxLength": 180},
+                "lighting": {"type": "string", "maxLength": 180},
+                "photo": {"type": "string", "maxLength": 180},
+                "medium": {"type": "string", "maxLength": 50},
                 "color_palette": {"type": "array", "items": _HEX, "minItems": 3, "maxItems": 6},
             },
             "required": ["aesthetics", "lighting", "photo", "medium", "color_palette"],
@@ -91,10 +91,11 @@ SCENE_COMPOSITION_SCHEMA = {
             "type": "object",
             "additionalProperties": False,
             "properties": {
-                "background": {"type": "string"},
+                "background": {"type": "string", "maxLength": 350},
                 "elements": {
                     "type": "array",
                     "minItems": 1,
+                    "maxItems": 8,
                     "items": {
                         "type": "object",
                         "additionalProperties": False,
@@ -106,7 +107,7 @@ SCENE_COMPOSITION_SCHEMA = {
                                 "minItems": 4,
                                 "maxItems": 4,
                             },
-                            "desc": {"type": "string"},
+                            "desc": {"type": "string", "maxLength": 300},
                             "color_palette": {
                                 "type": "array",
                                 "items": _HEX,
@@ -169,7 +170,7 @@ All keys above are required and must appear exactly as named. Do not add, rename
 
 ## high_level_description
 
-- String. One sentence or short paragraph summarizing the whole image: setting, time of day, main subjects, and overall mood.
+- String, **50-word hard cap**. ONE long sentence preferred, never more than two. Start immediately with the subject — no "this image shows", "depicts", "captures". Identify the main subject(s), medium, and overall composition. General terms (`various`, `multiple`) are fine here; granular detail belongs in element `desc`s and `background`.
 
 ## style_description
 
@@ -183,7 +184,7 @@ A flat object describing how the image is rendered, independent of what it depic
 
 ## compositional_deconstruction.background
 
-- String. Describe only the environment behind and around the subjects. Do NOT describe any element listed in `elements`.
+- String, **60-word cap**. Describe only the environment behind and around the subjects, plus scene-wide lighting/atmosphere and any shadows. Do NOT describe any element listed in `elements`.
 
 ## compositional_deconstruction.elements
 
@@ -193,7 +194,7 @@ Each element:
 
 - `type` (string): Always "obj".
 - `bbox` (array of 4 integers): [x_min, y_min, x_max, y_max] on a 1000×1000 canvas with origin at the top-left, x increasing rightward, y increasing downward. Must satisfy 0 ≤ x_min < x_max ≤ 1000 and 0 ≤ y_min < y_max ≤ 1000. The box must reflect the element's described position and relative size.
-- `desc` (string): Identity, pose and orientation, location in the frame, relative size, key visual details, gaze or motion, and any atmosphere/light interaction specific to this element. Do not restate global background or style information.
+- `desc` (string): **30–60 words, 60-word HARD CAP.** Identity FIRST (a standalone catalog entry — open with what the thing is, not "the X"), then major attributes briefly (people: skin tone, hair, each garment + color, expression, pose; objects: shape, material, color, distinctive parts), then one distinguishing detail. **One subject = one element** — anatomical/structural parts go in that element's desc, never as separate elements. Do NOT include: camera/render language (DoF, bokeh, focus, grain, lens flare) unless the user asked; shadow language (the renderer infers shadows — scene-wide ones go in `background`); metaphor/impression words (luminous, radiant, vibrant, lush, stunning, breathtaking) — use observable properties instead. Do not restate global background or style information.
 - `color_palette` (array of strings): 2–5 dominant colors of THIS element as uppercase hex codes in #RRGGBB form.
 
 # Composition guidance
@@ -271,7 +272,7 @@ class JSONPromptGenerator:
                     "FLOAT",
                     {"default": 0.8, "min": 0.0, "max": 2.0, "step": 0.05},
                 ),
-                "max_tokens": ("INT", {"default": 1536, "min": 64, "max": 8192}),
+                "max_tokens": ("INT", {"default": 2048, "min": 64, "max": 8192}),
             },
             "optional": {
                 "system_prompt": (
@@ -361,7 +362,17 @@ class JSONPromptGenerator:
         )
 
         raw = result["choices"][0]["message"]["content"]
-        data = json.loads(raw)  # guaranteed to parse; reserialize for clean output
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            # The schema bounds every string (maxLength) and the element count (maxItems),
+            # so the grammar forces a complete document — this should not happen. If it does,
+            # the generation hit max_tokens before closing. Fail with a clear, actionable message.
+            raise ValueError(
+                f"Model output was not valid JSON ({e}). It likely hit max_tokens "
+                f"({int(max_tokens)}) before the document closed — raise max_tokens or "
+                f"lower temperature. First 200 chars: {raw[:200]!r}"
+            )
         pretty = json.dumps(data, indent=2, ensure_ascii=False)
         return (pretty, _flatten_to_prompt(data))
 
