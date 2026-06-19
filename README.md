@@ -23,6 +23,31 @@ What the grammar enforces for free (was previously "please obey" in the prompt):
 What the *model* still owns (semantic, not structural — no engine guarantees these):
 `x_min < x_max`, bboxes matching the prose, palette harmony, description quality.
 
+## Cloud backend (Groq) — "Scene JSON Generator (Groq)"
+
+A second node, `GroqJSONPromptGenerator`, produces the **same scene-composition JSON** but runs
+inference on [Groq](https://console.groq.com) instead of a local GGUF. No VRAM cost, no
+llama.cpp build — useful when the GPU is busy with the diffusion model.
+
+- Default model `openai/gpt-oss-120b` (also `-20b`) uses Groq **strict structured outputs**, so
+  the key set / types / `type:"obj"` enum are schema-enforced server-side. Other models
+  (Kimi, Llama-3.3, Qwen) fall back to JSON-object mode (valid JSON, no schema enforcement).
+- **API key:** leave the `api_key` widget blank and set the `GROQ_API_KEY` environment variable
+  (preferred — keeps the key out of saved workflows), or paste it into the widget.
+- Output is byte-for-byte interchangeable with the local node (same JSON shape, `bbox` as a
+  4-int `[x_min, y_min, x_max, y_max]` array, uppercase `#RRGGBB`).
+
+Implementation notes (Groq strict mode differs from llama.cpp grammar):
+- Groq strict mode only honors `type/properties/items/required/additionalProperties/enum`. It
+  **ignores** `maxLength`/`pattern`/`minItems`/`maxItems`, so those are stripped from the request;
+  string-length discipline is left to the system prompt, and hex is normalized in post.
+- A fixed-length array (the 4-int `bbox`) can't be enforced that way — the model emits degenerate
+  bboxes (`[1,1]`, `[100500900800]`). The node sends `bbox` as a **4-required-field object**
+  (`x_min/y_min/x_max/y_max`, which strict mode *does* guarantee), appends a matching bbox-format
+  instruction to the system prompt, and converts the object back to the canonical array on output.
+- Posts to the OpenAI-compatible endpoint with stdlib `urllib` (no `groq` SDK dependency); sends a
+  `User-Agent` header because Groq's Cloudflare front 403s urllib's default (error 1010).
+
 ## Install
 
 1. Copy this `ComfyUI-JSONPrompt/` folder into `ComfyUI/custom_nodes/`.
