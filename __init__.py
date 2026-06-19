@@ -19,4 +19,15 @@ try:
 except Exception as e:  # pragma: no cover
     print(f"[ComfyUI-JSONPrompt] Groq node not loaded: {e}")
 
+# DeepSeek (cloud) backend — optional, same guard pattern.
+try:
+    from .deepseek_nodes import (
+        NODE_CLASS_MAPPINGS as _DS_CLASSES,
+        NODE_DISPLAY_NAME_MAPPINGS as _DS_NAMES,
+    )
+    NODE_CLASS_MAPPINGS.update(_DS_CLASSES)
+    NODE_DISPLAY_NAME_MAPPINGS.update(_DS_NAMES)
+except Exception as e:  # pragma: no cover
+    print(f"[ComfyUI-JSONPrompt] DeepSeek node not loaded: {e}")
+
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
