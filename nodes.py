@@ -171,6 +171,7 @@ All keys above are required and must appear exactly as named. Do not add, rename
 ## high_level_description
 
 - String, **50-word hard cap**. ONE long sentence preferred, never more than two. Start immediately with the subject — no "this image shows", "depicts", "captures". Identify the main subject(s), medium, and overall composition. General terms (`various`, `multiple`) are fine here; granular detail belongs in element `desc`s and `background`.
+- **Name** the subjects and the scene, but do NOT spell out their specific attributes (clothing, colors, pose, held objects, materials) here — those belong ONLY in the matching element. Repeating a subject's concrete details here AND in an element makes the renderer draw that subject TWICE.
 
 ## style_description
 
@@ -193,12 +194,13 @@ Array with at least 1 item, listed roughly background-to-foreground.
 Each element:
 
 - `type` (string): Always "obj".
-- `bbox` (array of 4 integers): [x_min, y_min, x_max, y_max] on a 1000×1000 canvas with origin at the top-left, x increasing rightward, y increasing downward. Must satisfy 0 ≤ x_min < x_max ≤ 1000 and 0 ≤ y_min < y_max ≤ 1000. The box must reflect the element's described position and relative size.
+- `bbox` (array of 4 integers): **[y_min, x_min, y_max, x_max]** on a 1000×1000 canvas with origin at the top-left, y increasing downward, x increasing rightward. This is Ideogram's canonical row-major order — **y comes FIRST**. Must satisfy 0 ≤ y_min < y_max ≤ 1000 and 0 ≤ x_min < x_max ≤ 1000. The box must reflect the element's described position and relative size.
 - `desc` (string): **30–60 words, 60-word HARD CAP.** Identity FIRST (a standalone catalog entry — open with what the thing is, not "the X"), then major attributes briefly (people: skin tone, hair, each garment + color, expression, pose; objects: shape, material, color, distinctive parts), then one distinguishing detail. **One subject = one element** — anatomical/structural parts go in that element's desc, never as separate elements. Do NOT include: camera/render language (DoF, bokeh, focus, grain, lens flare) unless the user asked; shadow language (the renderer infers shadows — scene-wide ones go in `background`); metaphor/impression words (luminous, radiant, vibrant, lush, stunning, breathtaking) — use observable properties instead. Do not restate global background or style information.
 - `color_palette` (array of strings): 2–5 dominant colors of THIS element as uppercase hex codes in #RRGGBB form.
 
 # Composition guidance
 
+- **One entity = one element, described once.** Every distinct subject/object appears as exactly ONE element and is described in detail in that element ONLY. Never create two elements for the same entity, and never re-describe an element's subject in `high_level_description` or `background`. This is the #1 cause of unwanted duplicate subjects in the render.
 - Place elements deliberately: vary depth, avoid centering everything, and let bboxes match the prose.
 - Keep `style_description` and every `desc` mutually consistent in palette, lighting, and atmosphere.
 - Each element's `color_palette` should be plausibly drawn from or harmonious with the overall `style_description.color_palette`.
