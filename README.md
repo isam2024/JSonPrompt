@@ -35,8 +35,7 @@ llama.cpp build — useful when the GPU is busy with the diffusion model.
 - **API key:** leave the `api_key` widget blank and set the `GROQ_API_KEY` environment variable
   (preferred — keeps the key out of saved workflows), or paste it into the widget.
 - Output is byte-for-byte interchangeable with the local node (same JSON shape, `bbox` as a
-  4-int `[y_min, x_min, y_max, x_max]` array — Ideogram's canonical y-first order, which the
-  KJNodes Prompt Builder `import_json` expects — and uppercase `#RRGGBB`).
+  4-int `[x_min, y_min, x_max, y_max]` array, uppercase `#RRGGBB`).
 
 Implementation notes (Groq strict mode differs from llama.cpp grammar):
 - Groq strict mode only honors `type/properties/items/required/additionalProperties/enum`. It

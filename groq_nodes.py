@@ -48,9 +48,10 @@ _UNSUPPORTED_SCHEMA_KEYS = {
 # DOES guarantee `required` object fields, so we send bbox as an object with 4 required ints
 # and convert it back to the canonical [x_min, y_min, x_max, y_max] array afterward.
 _BBOX_KEYS = ["x_min", "y_min", "x_max", "y_max"]
-# Output order is Ideogram's canonical row-major [y_min, x_min, y_max, x_max] (y-first), which
-# is what the KJNodes Prompt Builder's import_json expects. Object field names stay semantic.
-_BBOX_OUTPUT_ORDER = ["y_min", "x_min", "y_max", "x_max"]
+# Output order: x-first [x_min, y_min, x_max, y_max]. Empirically verified (2026-06-19) that the
+# user's KJNodes Prompt Builder import_json pipeline consumes x-first — a y-first array rendered
+# every element rotated 90° (upright subjects came out lying horizontal). Keep x-first.
+_BBOX_OUTPUT_ORDER = ["x_min", "y_min", "x_max", "y_max"]
 
 
 def _is_fixed_int_quad(s):

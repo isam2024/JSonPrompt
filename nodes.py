@@ -194,7 +194,7 @@ Array with at least 1 item, listed roughly background-to-foreground.
 Each element:
 
 - `type` (string): Always "obj".
-- `bbox` (array of 4 integers): **[y_min, x_min, y_max, x_max]** on a 1000×1000 canvas with origin at the top-left, y increasing downward, x increasing rightward. This is Ideogram's canonical row-major order — **y comes FIRST**. Must satisfy 0 ≤ y_min < y_max ≤ 1000 and 0 ≤ x_min < x_max ≤ 1000. The box must reflect the element's described position and relative size.
+- `bbox` (array of 4 integers): [x_min, y_min, x_max, y_max] on a 1000×1000 canvas with origin at the top-left, x increasing rightward, y increasing downward. Must satisfy 0 ≤ x_min < x_max ≤ 1000 and 0 ≤ y_min < y_max ≤ 1000. The box must reflect the element's described position and relative size.
 - `desc` (string): **30–60 words, 60-word HARD CAP.** Identity FIRST (a standalone catalog entry — open with what the thing is, not "the X"), then major attributes briefly (people: skin tone, hair, each garment + color, expression, pose; objects: shape, material, color, distinctive parts), then one distinguishing detail. **One subject = one element** — anatomical/structural parts go in that element's desc, never as separate elements. Do NOT include: camera/render language (DoF, bokeh, focus, grain, lens flare) unless the user asked; shadow language (the renderer infers shadows — scene-wide ones go in `background`); metaphor/impression words (luminous, radiant, vibrant, lush, stunning, breathtaking) — use observable properties instead. Do not restate global background or style information.
 - `color_palette` (array of strings): 2–5 dominant colors of THIS element as uppercase hex codes in #RRGGBB form.
 
